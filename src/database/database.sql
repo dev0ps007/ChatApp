@@ -1,0 +1,41 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(30) NOT NULL,
+  userName VARCHAR(30),
+  lastName VARCHAR(30) NOT NULL,
+  firstName VARCHAR(30) NOT NULL,
+  password VARCHAR(32) NOT NULL
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE rooms (
+  id SERIAL PRIMARY KEY,
+  owner_id INTEGER NOT NULL,
+  title VARCHAR(30) NOT NULL,
+  description(100) VARCHAR NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  FOREIGN KEY (owner_id) REFERENCES users (id)
+);
+
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  room_id INTEGER NOT NULL,
+  author_id INTEGER NOT NULL,
+  content VARCHAR(1000) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  FOREIGN KEY (room_id) REFERENCES rooms (id) ON DELETE CASCADE,
+  FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE room_members_user (
+  id SERIAL PRIMARY KEY,
+  room_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  FOREIGN KEY (room_id) REFERENCES rooms (id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
