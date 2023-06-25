@@ -22,16 +22,27 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   console.log('A user connected');
 
-  authenticationService.register(socket);
-  authenticationService.login(socket);
+  socket.on('join', (joinData) => {
+    const { userId, roomId } = joinData;
+    socket.join(roomId.toString());
+    pool.query('INSERT INTO room_members_user (room_id, user_id) VALUES ($1, $2)', [roomId, userId]);
+    io.to(roomId.toString()).emit('A new user has joined the room');
+  });
+
+  socket.on('leave', (leaveData) => {
+    const { userId, roomId } = leaveData;
+    socket.leave(roomId.toString());
+    pool.query('DELETE FROM room_members_user WHERE room_id = $1 AND user_id = $2', [roomId, userId]);
+    io.to(roomId.toString()).emit(`User ${socket.id} has left the room`);
+  });
 
   // auth middleware
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const cookie = socket.handshake.headers.cookie;
     const { Authentication: authenticationToken } = parse(cookie);
     if (authenticationToken) {
       const decoded = jwt.verify(authenticationToken, process.env.JWT_TOKEN_SECRET);
-      const candidate = usersService.findUserById(decoded.userId);
+      const candidate = await usersService.findUserById(decoded.userId);
       if (!candidate) {
         socket.disconnect(true);
         return next(new Error('Unauthorized'));
@@ -42,6 +53,8 @@ io.on('connection', (socket) => {
     }
   });
 
+  authenticationService.register(socket);
+  authenticationService.login(socket);
   authenticationService.logout(socket);
 
   usersService.getAllUsers(socket);
@@ -58,26 +71,12 @@ io.on('connection', (socket) => {
   roomsService.updateRoom(socket);
   roomsService.deleteRoom(socket);
 
-  socket.on('join', (joinData) => {
-    const { userId, roomId } = joinData;
-    socket.join(roomId.toString());
-    pool.query('INSERT INTO room_members_user (room_id, user_id) VALUES ($1, $2)', [roomId, userId]);
-    io.to(roomId.toString()).emit('A new user has joined the room');
-  });
-
-  socket.on('leave', (leaveData) => {
-    const { userId, roomId } = leaveData;
-    socket.leave(roomId.toString());
-    pool.query('DELETE FROM room_members_user WHERE room_id = $1 AND user_id = $2', [roomId, userId]);
-    io.to(roomId.toString()).emit(`User ${socket.id} has left the room`);
-  });
-
   messagesService.getAllMessages(socket);
   messagesService.getAllMessagesOfRoom(socket);
   messagesService.getMessageById(socket);
-  messagesService.createMessage(socket);
-  messagesService.updateMessage(socket);
-  messagesService.deleteMessage(socket);
+  messagesService.createMessage(io, socket);
+  messagesService.updateMessage(io, socket);
+  messagesService.deleteMessage(io, socket);
 
   socket.on('disconnect', () => {
     console.log('A user disconnected');

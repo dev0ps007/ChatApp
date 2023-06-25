@@ -11,7 +11,8 @@ describe('My ChatApp project', () => {
     const httpServer = createServer(app);
     io = new Server(httpServer, {
       cors: {
-        origin: '*'
+        origin: 'http://localhost:3000',
+        credentials: true
       }
     });
     httpServer.listen(() => {

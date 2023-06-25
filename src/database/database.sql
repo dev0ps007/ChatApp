@@ -4,7 +4,7 @@ CREATE TABLE users (
   userName VARCHAR(30),
   lastName VARCHAR(30) NOT NULL,
   firstName VARCHAR(30) NOT NULL,
-  password VARCHAR(32) NOT NULL
+  password VARCHAR(32) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -16,7 +16,7 @@ CREATE TABLE rooms (
   description(100) VARCHAR NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
-  FOREIGN KEY (owner_id) REFERENCES users (id)
+  FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE messages (
